@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Carpet Bombers</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2306080a'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%238fd3d6' stroke-width='2'/%3E%3Cpath d='M16 3v7M16 22v7M3 16h7M22 16h7' stroke='%23e2a43a' stroke-width='2.4'/%3E%3C/svg%3E">
+  <script type="module" crossorigin src="./assets/index-D7-lj9_x.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/three-DPIldUnk.js">
+  <link rel="stylesheet" crossorigin href="./assets/index-vs7f8_2V.css">
+</head>
+<body>
+<canvas id="scene" tabindex="-1" aria-label="La chambre vue depuis le chasseur"></canvas>
+<div id="fpfx" aria-hidden="true" hidden></div>
+
+<div id="marks" aria-hidden="true">
+  <div id="cross" hidden>
+    <svg viewBox="-48 -48 96 96" fill="none">
+      <circle class="r-ring" r="17" stroke-dasharray="20.7 6" transform="rotate(-38)"/>
+      <g class="t-u"><path class="r-tick" d="M0 -6.5V-12"/></g>
+      <g class="t-d"><path class="r-tick" d="M0 6.5V12"/></g>
+      <g class="t-l"><path class="r-tick" d="M-6.5 0H-12"/></g>
+      <g class="t-r"><path class="r-tick" d="M6.5 0H12"/></g>
+      <circle class="r-dot" r="1.3"/>
+    </svg>
+  </div>
+  <div id="hitmark"><i></i><i></i><i></i><i></i></div>
+  <div id="dmgArcs"></div>
+  <div id="lockbox" hidden><span class="lk-name" id="lockname"></span><span class="lk-dist" id="lockdist">0 cm</span><i class="lk-hp"><b id="lockhp"></b></i></div>
+  <div id="lockarrow" hidden></div>
+  <div id="cpMark" hidden><span id="cpNum">1</span></div>
+  <div id="cpArrow" hidden></div>
+</div>
+<div id="vignette"></div>
+
+<div id="hud" hidden>
+  <div class="hud-top">
+    <section class="hpanel mission">
+      <header class="hp-head"><span>Opération chambre</span><span id="hudZone">Chambre</span></header>
+      <div class="m-wave"><small id="hudWaveLabel">Vague</small><b id="hudWave">00</b></div>
+      <div class="kv"><span>Hostiles</span><b id="hudEnemies">0</b></div>
+      <div class="kv"><span>Score</span><b id="hudScore">0</b></div>
+      <div class="kv coins"><span><i class="coin-ico"></i>Pièces</span><b id="hudCoins">0</b></div>
+    </section>
+    <section class="compass-wrap" aria-hidden="true">
+      <canvas id="compass"></canvas>
+      <div class="c-caret"></div>
+      <div class="c-head" id="hudHead">000°</div>
+    </section>
+    <section class="hpanel radar">
+      <header class="hp-head"><span>Plan</span><span id="radarCap">Chambre</span></header>
+      <canvas id="radar"></canvas>
+    </section>
+  </div>
+  <div class="fin-prompt" id="finPrompt" hidden>
+    <p class="eyebrow">Ordinateur · mode sans fin</p>
+    <div class="fin-ligne"><kbd data-touche="terminer">T</kbd><span id="finTexte">Maintiens T pour terminer la partie</span></div>
+    <div class="fin-prix"><i class="coin-ico"></i><span id="finPrix"></span></div>
+    <div class="bar"><i id="finBarre"></i></div>
+  </div>
+  <div class="hud-bottom">
+    <section class="hpanel ship">
+      <header class="hp-head"><span id="hudName">Alpha</span><span id="hudRank">Recrue</span></header>
+      <div class="meter" id="shieldRow" hidden><span>Bouclier</span><div class="bar seg shield"><i id="barShield"></i></div><b id="hudShield">0</b></div>
+      <div class="meter"><span>Coque</span><div class="bar seg" id="hullBarWrap"><i id="barHull"></i></div><b id="hudHull">100</b></div>
+      <div class="meter"><span>Turbo</span><div class="bar turbo"><i id="barTurbo"></i></div><b id="hudTurbo">100</b></div>
+      <div class="readouts"><span>Vit. <b id="hudSpeed">0</b> cm/s</span><span>Alt. <b id="hudAlt">0</b> cm</span></div>
+      <div class="abilities">
+        <div class="ability" id="abilityRow" hidden><kbd data-touche="onde">F</kbd><span>Onde de choc</span><b id="hudShock">prête</b></div>
+        <div class="ability scarab" id="scarabRow" hidden><kbd>Clic</kbd><span>Canon Scarabée</span><b id="hudScarab">30 munitions</b></div>
+        <div class="ability lg" id="phoenixRow" hidden><kbd>Auto</kbd><span>Protocole Phénix</span><b id="hudPhoenix">armé</b></div>
+        <div class="ability lg" id="singRow" hidden><kbd>Auto</kbd><span>Singularité</span><b id="hudSing">prête</b></div>
+      </div>
+    </section>
+    <section class="hpanel weapon" id="weaponPanel">
+      <header class="hp-head"><span>Armement</span><span id="hudAmmo">Munitions ∞</span></header>
+      <div class="w-name" id="hudGun">Canons jumelés</div>
+      <div class="w-stats"><span>Dégâts <b id="hudDmg">10</b></span><span>Cadence <b id="hudRate">8,3</b>/s</span></div>
+      <div class="leg" id="hudLeg"></div>
+      <div class="leg-hint" id="hudLegHint" hidden></div>
+    </section>
+    <div class="hud-right">
+      <section class="hpanel comp" id="compPanel">
+        <header class="hp-head"><span>Ordinateur à défendre</span><b id="hudComp">100 %</b></header>
+        <div class="bar seg comp"><i id="barComp"></i></div>
+      </section>
+      <section class="hpanel squad">
+        <header class="hp-head"><span id="hudEscadrille">Escadrille</span><span id="hudReserve">Réserve 4</span></header>
+        <ul id="squadList"></ul>
+      </section>
+    </div>
+  </div>
+</div>
+<div id="bossbar" hidden>
+  <div class="bb-top"><span class="bb-name" id="bbName"></span><span class="bb-num" id="bbNum"></span></div>
+  <div class="bb-bar" id="bbBar"><i id="bbHp"></i><i class="sh" id="bbSh"></i></div>
+  <div class="bb-bar alt" id="bbAltBar" hidden><i id="bbAlt"></i></div>
+  <div class="bb-sub" id="bbSub"></div>
+</div>
+<div id="areneHud" hidden>
+  <div class="ar-score" id="arScore">
+    <div class="ar-cote moi"><small>Ton équipe</small><b id="arMoi">0</b></div>
+    <div class="ar-mid"><span id="arMode">Premier à</span><b id="arObj">75</b></div>
+    <div class="ar-cote eux"><b id="arEux">0</b><small>Adversaires</small></div>
+  </div>
+  <div class="ar-zones" id="arZones" hidden></div>
+  <div class="ar-fil" id="arFil" aria-live="polite"></div>
+  <div class="ar-mort" id="arMort" hidden></div>
+  <div class="ar-bonus" id="arBonus"></div>
+</div>
+<div id="arMarques"></div>
+<section id="tableau" class="tableau" hidden aria-label="Tableau des scores">
+  <header><span id="tbTitre">Match à mort par équipe</span><small>Tableau des scores</small></header>
+  <div class="tb-corps" id="tbCorps"></div>
+</section>
+<div id="banner" aria-live="polite"><div class="b-title" id="bTitle"></div><div class="b-sub" id="bSub"></div></div>
+<div id="toast" role="status"></div>
+<div id="medailles" class="medailles" aria-live="polite"></div>
+<div id="alertPop" aria-live="assertive" hidden><div class="ap-title" id="alertTitle">À couvert !!!</div><div class="ap-sub" id="alertSub"></div></div>
+
+<section id="menu" class="overlay menu">
+  <div class="card menu-card">
+    <h1 lang="en"><span class="l1">Carpet</span><span class="l2">Bombers</span></h1>
+    <p class="lede">Défends l'ordinateur du bureau contre les soucoupes, vague après vague.</p>
+    <div class="profile" id="menuProfile">
+      <div class="rank-ico" id="mpRankIco"></div>
+      <div class="rank-txt"><b id="mpRank">Recrue</b><span id="mpXp">0 XP</span><div class="bar xp"><i id="mpXpBar"></i></div></div>
+      <div class="credits"><span>Crédits</span><b id="mpCredits">0</b></div>
+    </div>
+    <nav class="menu-nav" aria-label="Menu principal">
+      <button id="startBtn" class="btn" type="button">Décoller</button>
+      <button id="multiBtn" class="btn ghost" type="button">Multijoueur</button>
+      <button id="hangarBtn" class="btn ghost" type="button">Hangar</button>
+      <button id="defisBtn" class="btn ghost" type="button">Défis</button>
+      <button id="aideBtn" class="btn ghost" type="button">Commandes</button>
+      <button id="optionsBtn" class="btn ghost" type="button">Options</button>
+    </nav>
+    <p class="best" id="bestLine"></p>
+    <p class="note" id="touchNote" hidden>Ce jeu se joue avec un clavier et une souris.</p>
+    <p class="note err" id="loadErr" hidden>Le moteur 3D n'a pas pu se charger. Vérifie ta connexion, puis recharge la page.</p>
+    <p class="credit">Hommage à Room War</p>
+  </div>
+</section>
+
+<section id="salon" class="overlay center" hidden aria-label="Multijoueur">
+  <div class="card salon">
+    <div class="opt-head">
+      <div class="stack"><p class="eyebrow" id="salonEyebrow">Partie privée</p><h2>Multijoueur</h2></div>
+      <button id="salonClose" class="btn ghost small" type="button">Retour</button>
+    </div>
+    <div class="salon-reseau">
+      <button id="salonInviter" class="btn ghost small" type="button">Inviter des amis</button>
+      <button id="salonCodeAff" class="salon-code" type="button" hidden title="Copier le code"></button>
+      <div class="salon-joindre" id="salonJoindre">
+        <span>ou rejoindre un salon</span>
+        <input id="salonCode" maxlength="5" placeholder="CODE" autocomplete="off" spellcheck="false" aria-label="Code du salon">
+        <button id="salonRejoindre" class="btn ghost small" type="button">Rejoindre</button>
+      </div>
+      <span class="salon-etat" id="salonEtat" role="status"></span>
+    </div>
+    <div class="salon-grille">
+      <div class="salon-reglages">
+        <div class="field"><span>Mode</span><div class="seg" role="radiogroup" aria-label="Mode" id="salonModes"></div></div>
+        <p class="mode-desc" id="salonDesc"></p>
+        <div class="field"><span id="salonTailleLbl">Joueurs par équipe</span><div class="seg" role="radiogroup" id="salonTaille"></div></div>
+        <div class="field"><span id="salonBotsLbl">Bots pour compléter</span><div class="seg" role="radiogroup" id="salonBots"></div></div>
+        <div class="field" id="salonLimiteRow"><span>Score à atteindre</span><div class="seg" role="radiogroup" id="salonLimite"></div></div>
+      </div>
+      <div class="salon-equipes">
+        <div class="salon-col e0"><h3 id="salonE0Titre">Équipe bleue</h3><ul id="salonE0"></ul></div>
+        <div class="salon-col e1" id="salonCol1"><h3>Équipe rouge</h3><ul id="salonE1"></ul></div>
+      </div>
+    </div>
+    <p class="opt-note" id="salonNote"></p>
+    <div class="actions">
+      <button id="salonLancer" class="btn" type="button">Lancer la partie</button>
+      <span class="salon-attente" id="salonAttente" hidden>L'hôte lance la partie quand tout le monde est prêt…</span>
+      <button id="salonEquipe" class="btn ghost" type="button">Changer d'équipe</button>
+    </div>
+  </div>
+</section>
+
+<section id="finMatch" class="overlay center" hidden aria-label="Fin de la partie">
+  <div class="card fin-match">
+    <p class="eyebrow" id="finEyebrow">Match à mort par équipe</p>
+    <h2 id="finTitre">Victoire</h2>
+    <p class="fin-sous" id="finSous"></p>
+    <div class="tb-corps" id="finTableau"></div>
+    <div class="xp-block"><div class="xp-top"><span id="finGain"></span></div></div>
+    <div class="actions">
+      <button id="finRejouer" class="btn" type="button">Rejouer</button>
+      <button id="finSalon" class="btn ghost" type="button">Salon</button>
+      <button id="finMenu" class="btn ghost" type="button">Menu</button>
+    </div>
+  </div>
+</section>
+
+<section id="defis" class="overlay center" hidden aria-label="Défis">
+  <div class="card defis">
+    <div class="opt-head">
+      <div class="stack"><p class="eyebrow">Crédits à gagner</p><h2>Défis</h2></div>
+      <button id="defisClose" class="btn ghost small" type="button">Retour</button>
+    </div>
+    <div class="df-corps" id="defisCorps"></div>
+  </div>
+</section>
+
+<section id="aide" class="overlay center" hidden aria-label="Commandes">
+  <div class="card aide">
+    <div class="opt-head">
+      <div class="stack"><p class="eyebrow">Avant de décoller</p><h2>Commandes</h2></div>
+      <button id="aideClose" class="btn ghost small" type="button">Retour</button>
+    </div>
+    <dl class="touches">
+      <div><dt><kbd>Souris</kbd></dt><dd>Diriger</dd></div>
+      <div><dt><kbd>Clic gauche</kbd></dt><dd>Tirer</dd></div>
+      <div><dt><kbd>Clic droit</kbd><kbd data-touche="verrouiller">E</kbd></dt><dd>Verrouiller une cible</dd></div>
+      <div><dt><kbd data-touche="avancer">Z</kbd><kbd data-touche="reculer">S</kbd></dt><dd>Avancer, reculer</dd></div>
+      <div><dt><kbd data-touche="gauche">Q</kbd><kbd data-touche="droite">D</kbd></dt><dd>Glisser sur le côté</dd></div>
+      <div><dt><kbd data-touche="monter">A</kbd><kbd data-touche="descendre">W</kbd></dt><dd>Monter, descendre</dd></div>
+      <div><dt><kbd data-touche="turbo">Espace</kbd></dt><dd>Turbo</dd></div>
+      <div><dt><kbd data-touche="onde">F</kbd></dt><dd>Onde de choc</dd></div>
+      <div><dt><kbd data-touche="vue">V</kbd></dt><dd>Vue cockpit ou arrière</dd></div>
+      <div><dt><kbd>Molette</kbd></dt><dd>Rapprocher ou éloigner la caméra</dd></div>
+      <div><dt><kbd data-touche="tableau">Tab</kbd></dt><dd>Voir tes légendaires</dd></div>
+      <div><dt><kbd data-touche="ordre1">1</kbd><kbd data-touche="ordre2">2</kbd><kbd data-touche="ordre3">3</kbd></dt><dd>Ailiers : ma cible, l'ordinateur, libres</dd></div>
+      <div><dt><kbd data-touche="terminer">T</kbd></dt><dd>Terminer (mode sans fin)</dd></div>
+      <div><dt><kbd data-touche="son">M</kbd></dt><dd>Couper le son</dd></div>
+      <div><dt><kbd data-touche="pleinEcran">F2</kbd></dt><dd>Plein écran</dd></div>
+      <div><dt><kbd>Échap</kbd><kbd data-touche="pause">P</kbd></dt><dd>Pause</dd></div>
+    </dl>
+    <ul class="deroule">
+      <li><b>Atelier</b><span>Ramasse les pièces, achète des améliorations entre les vagues.</span></li>
+      <li><b>Boss</b><span>Toutes les 5 vagues, un membre de la famille alien débarque.</span></li>
+      <li><b>Hangar</b><span>Chaque partie rapporte XP et crédits pour personnaliser ton chasseur.</span></li>
+    </ul>
+    <p class="whisper">Un objet étrange brillerait au-dessus de la chambre…</p>
+  </div>
+</section>
+
+<section id="hangar" class="overlay hangar" hidden aria-label="Hangar">
+  <div class="hg-preview" id="hgPreview"><p class="hg-hint">Glisse pour faire pivoter</p></div>
+  <div class="hg-panel">
+    <div class="hg-head">
+      <div class="stack"><p class="eyebrow">Hangar de l'escadrille</p><h2>Ton chasseur</h2></div>
+      <button id="hangarClose" class="btn ghost small" type="button">Retour</button>
+    </div>
+    <div class="profile">
+      <div class="rank-ico" id="hgRankIco"></div>
+      <div class="rank-txt"><b id="hgRank">Recrue</b><span id="hgXp">0 XP</span><div class="bar xp"><i id="hgXpBar"></i></div></div>
+      <div class="credits"><span>Crédits</span><b id="hgCredits">0</b></div>
+    </div>
+    <label class="callsign"><span>Indicatif</span><input id="callsign" maxlength="12" autocomplete="off" spellcheck="false"></label>
+    <div class="rayons" role="tablist" id="hgRayons" aria-label="Rayons de l'armurerie"></div>
+    <div class="tabs" role="tablist" id="hgTabs" aria-label="Emplacements"></div>
+    <div class="hg-embleme" id="hgEmbleme" hidden><canvas id="hgEmblemeVue" width="128" height="128"></canvas><span>Ton emblème, sur les ailes ou les flancs du chasseur</span></div>
+    <div class="items" id="hgItems"></div>
+    <p class="hg-note" id="hgNote"></p>
+  </div>
+</section>
+
+<section id="shop" class="overlay center" hidden>
+  <div class="card">
+    <div class="shop-head">
+      <div class="stack"><p class="eyebrow" id="shopEyebrow">Vague 1 repoussée</p><h2>L'atelier</h2></div>
+      <div class="purse"><i class="coin-ico big"></i><span id="shopCoins">0</span><small>pièces</small></div>
+    </div>
+    <p class="plain">Trois pièces détachées, tirées au hasard pour cette partie. Tout ce que tu achètes reste installé jusqu'à la fin de la partie.</p>
+    <div class="offers" id="offers"></div>
+    <div class="actions">
+      <button id="nextBtn" class="btn" type="button">Lancer la vague 2</button>
+      <button id="rerollBtn" class="btn ghost" type="button">Relancer</button>
+    </div>
+    <div class="shop-build">
+      <div class="build-head"><p class="eyebrow">Déjà installé sur ton escadrille</p><span id="ownedCount"></span></div>
+      <div class="owned" id="owned"></div>
+    </div>
+  </div>
+</section>
+
+<section id="briefing" class="overlay center" hidden aria-label="Ton escadrille">
+  <div class="card brief">
+    <div class="stack"><p class="eyebrow">Avant le décollage</p><h2>Ton escadrille</h2></div>
+    <div class="field"><span>Mode de jeu</span>
+      <div class="seg modes" role="radiogroup" aria-label="Mode de jeu" id="briefModes">
+        <button type="button" role="radio" data-mode="normal">Normal</button><button type="button" role="radio" data-mode="infini">Infini</button><button type="button" role="radio" data-mode="bossrush">Boss rush</button><button type="button" role="radio" data-mode="course">Course</button>
+      </div>
+    </div>
+    <div class="field" id="briefNiveauRow" hidden><span id="briefNiveauLbl">Difficulté</span>
+      <div class="seg niveaux" role="radiogroup" id="briefNiveaux"></div>
+    </div>
+    <p class="mode-desc" id="briefModeDesc"></p>
+    <div class="field" id="briefCranesRow"><span>Crânes <small id="briefCranesBonus"></small></span>
+      <div class="cranes" id="briefCranes"></div>
+      <p class="mode-desc" id="briefCraneDesc">Des handicaps à activer pour gagner plus d'expérience. Survole un crâne pour voir ce qu'il fait.</p>
+    </div>
+    <label class="field big"><span>Nom de l'escadrille</span><input id="briefNom" maxlength="24" autocomplete="off" spellcheck="false"></label>
+    <div class="brief-grid">
+      <label class="field lead"><span>Toi · chef d'escadrille</span><input id="briefChef" maxlength="12" autocomplete="off" spellcheck="false"></label>
+      <label class="field"><span>Ailier 1</span><input id="briefAilier0" maxlength="12" autocomplete="off" spellcheck="false"></label>
+      <label class="field"><span>Ailier 2</span><input id="briefAilier1" maxlength="12" autocomplete="off" spellcheck="false"></label>
+      <label class="field"><span>Ailier 3</span><input id="briefAilier2" maxlength="12" autocomplete="off" spellcheck="false"></label>
+    </div>
+    <p class="plain">Les renforts qui décollent ensuite gardent leurs indicatifs habituels.</p>
+    <div class="actions">
+      <button id="briefGo" class="btn" type="button">Décoller</button>
+      <button id="briefHasard" class="btn ghost" type="button">Noms au hasard</button>
+      <button id="briefBack" class="btn ghost" type="button">Retour</button>
+    </div>
+  </div>
+</section>
+
+<section id="options" class="overlay center" hidden aria-label="Options">
+  <div class="card opts">
+    <div class="opt-head">
+      <div class="stack"><p class="eyebrow">Réglages</p><h2>Options</h2></div>
+      <button id="optClose" class="btn ghost small" type="button">Retour</button>
+    </div>
+    <div class="opt-grid">
+      <fieldset class="opt-group">
+        <legend>Audio</legend>
+        <label class="opt-row"><span>Volume général</span><input type="range" id="optVolume" min="0" max="100" step="1"><output id="optVolumeV"></output></label>
+        <label class="opt-row"><span>Musique</span><input type="range" id="optMusique" min="0" max="100" step="1"><output id="optMusiqueV"></output></label>
+        <label class="opt-row"><span>Effets sonores</span><input type="range" id="optEffets" min="0" max="100" step="1"><output id="optEffetsV"></output></label>
+        <label class="opt-row"><span>Moteur du chasseur</span><input type="range" id="optMoteur" min="0" max="100" step="1"><output id="optMoteurV"></output></label>
+        <p class="opt-note">Touche <kbd data-touche="son">M</kbd> : couper ou remettre le son.</p>
+      </fieldset>
+      <fieldset class="opt-group">
+        <legend>Graphismes</legend>
+        <div class="quality">
+          <span>Graphismes</span>
+          <div class="seg" role="radiogroup" aria-label="Qualité graphique">
+            <button type="button" role="radio" data-q="auto">Auto</button><button type="button" role="radio" data-q="bas">Bas</button><button type="button" role="radio" data-q="moyen">Moyen</button><button type="button" role="radio" data-q="haut">Haut</button>
+          </div>
+          <span class="q-note" id="qNote"></span>
+        </div>
+        <label class="opt-row"><span>Luminosité</span><input type="range" id="optLum" min="50" max="200" step="5"><output id="optLumV"></output></label>
+        <label class="opt-row"><span>Champ de vision</span><input type="range" id="optFov" min="60" max="100" step="1"><output id="optFovV"></output></label>
+        <label class="opt-row check"><span>Secousses de l'écran</span><input type="checkbox" id="optSecousses"></label>
+        <label class="opt-row check"><span>Chiffres de dégâts</span><input type="checkbox" id="optDegats"></label>
+        <label class="opt-row check"><span>Plein écran sans bordure</span><input type="checkbox" id="optPleinEcran"></label>
+        <p class="opt-note">Touche <kbd data-touche="pleinEcran">F2</kbd>. En plein écran, <kbd>Échap</kbd> met en pause : maintiens-la pour sortir.</p>
+      </fieldset>
+      <fieldset class="opt-group">
+        <legend>Jouabilité</legend>
+        <label class="opt-row"><span>Sensibilité de la souris</span><input type="range" id="optSensi" min="20" max="300" step="5"><output id="optSensiV"></output></label>
+        <label class="opt-row"><span>Virage en souris libre</span><input type="range" id="optVirage" min="40" max="250" step="5"><output id="optVirageV"></output></label>
+        <label class="opt-row check"><span>Inverser l'axe vertical</span><input type="checkbox" id="optInverser"></label>
+        <label class="opt-row"><span>Distance de la caméra</span><input type="range" id="optRecul" min="50" max="200" step="5"><output id="optReculV"></output></label>
+        <p class="opt-note">En vue arrière, la molette rapproche ou éloigne la caméra.</p>
+      </fieldset>
+      <fieldset class="opt-group touches">
+        <legend>Touches</legend>
+        <div id="optTouches" class="touches-liste"></div>
+        <p class="opt-note">Clique sur une touche, puis appuie sur celle que tu veux à la place. <kbd>Échap</kbd> annule. Si la touche servait déjà, les deux actions échangent leurs touches.</p>
+      </fieldset>
+    </div>
+    <div class="actions"><button id="optDefaut" class="btn ghost small" type="button">Valeurs par défaut</button></div>
+  </div>
+</section>
+
+<section id="pause" class="overlay center" hidden>
+  <div class="card">
+    <h2>Pause</h2>
+    <p class="plain" id="pauseTexte">La bataille est figée. Reprends quand tu veux.</p>
+    <div class="actions">
+      <button id="resumeBtn" class="btn" type="button">Reprendre</button>
+      <button id="pauseOptions" class="btn ghost" type="button">Options</button>
+      <button id="quitBtn" class="btn ghost" type="button">Abandonner</button>
+    </div>
+  </div>
+</section>
+
+<section id="over" class="overlay center" hidden>
+  <div class="card">
+    <p class="eyebrow" id="overEyebrow">Partie terminée</p>
+    <h2 id="overTitle">L'ordinateur est tombé</h2>
+    <dl class="stats">
+      <div><dt>Vague atteinte</dt><dd id="stWave">1</dd></div>
+      <div><dt>Aliens abattus</dt><dd id="stKills">0</dd></div>
+      <div><dt>Score</dt><dd id="stScore">0</dd></div>
+      <div><dt>Record</dt><dd id="stBest">0</dd></div>
+      <div><dt>Pièces gagnées</dt><dd id="stCoins">0</dd></div>
+      <div><dt>Améliorations</dt><dd id="stUps">0</dd></div>
+    </dl>
+    <div class="xp-block" id="xpBlock">
+      <div class="xp-top"><span id="xpGain">+0 XP · +0 crédits</span><b id="xpRank">Recrue</b></div>
+      <div class="bar xp"><i id="xpBar"></i></div>
+      <p class="xp-note" id="xpNote"></p>
+    </div>
+    <div class="stack"><p class="eyebrow">Médailles</p><div class="medailles-recap" id="overMedailles"></div></div>
+    <div class="stack"><p class="eyebrow">Ta config finale</p><div class="owned" id="overBuild"></div></div>
+    <div class="actions">
+      <button id="contBtn" class="btn" type="button" hidden>Continuer sans fin</button>
+      <button id="againBtn" class="btn" type="button">Rejouer</button>
+      <button id="menuBtn" class="btn ghost" type="button">Menu</button>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
